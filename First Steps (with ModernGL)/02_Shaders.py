@@ -51,5 +51,5 @@ def update(dt):
     ctx.clear(.1, .1, .1)
     vao.render()
     
-pg.clock.schedule_interval(update, 0.05)
+pg.clock.schedule_interval(update, 1.0 / 60.0)
 pg.app.run()

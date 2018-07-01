@@ -44,8 +44,8 @@ vertices = np.array([
 indices = np.array([0, 1, 2, 0, 3, 4])
 
 vbo = ctx.buffer(vertices.astype('f4').tobytes())
-eab = ctx.buffer(indices.astype('i4').tobytes())
-vao = ctx.simple_vertex_array(prog, vbo, 'in_vert', 'in_color', index_buffer=eab)
+ibo = ctx.buffer(indices.astype('i4').tobytes())
+vao = ctx.simple_vertex_array(prog, vbo, 'in_vert', 'in_color', index_buffer=ibo)
 
 ctx.clear(.1, .1, .1)
 vao.render()
