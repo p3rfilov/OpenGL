@@ -1,15 +1,16 @@
-# building transformation matrices 
-# textured rectangle rotating back and forth on its Z axis
+# building and applying transformation matrices 
 
 import moderngl
 import pyglet as pg
 import numpy as np
 from PIL import Image
-from pyrr import matrix44, vector3
+from pyrr import Matrix44, Vector4
 import os
 import time
 
-window = pg.window.Window(640, 640, 'Transformations', resizable=False)
+width = 640
+height = 640
+window = pg.window.Window(width, height, 'Transformations', resizable=False)
 
 ctx = moderngl.create_context()
 prog = ctx.program(
@@ -58,7 +59,7 @@ ibo = ctx.buffer(indices.astype('i4').tobytes())
 vao = ctx.simple_vertex_array(prog, vbo, 'in_vert', 'in_UVs', index_buffer=ibo)
 
 img1 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Brick_{size}x{size}.jpg'.format(size=512))) # texture sizes: 8,16,32,64,128,256,512,1024,2048,4096
-img2 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Bulb.jpg')) # PNG with Alpha didn't work - displays a black box
+img2 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Bulb.jpg'))
 
 tex1 = ctx.texture(img1.size, 3, img1.tobytes()) # 3 for RGB
 tex2 = ctx.texture(img2.size, 3, img2.tobytes())
@@ -72,9 +73,14 @@ prog['myTexture2'].value = 1
 
 
 def update(dt):
-    rotZ = matrix44.create_from_z_rotation(np.sin(time.clock() / 2) * np.pi)
-    
-    prog['transform'].write(rotZ.astype('f4').tobytes())
+    proj = Matrix44.perspective_projection(50, width / height, 0.1, 1000.0)
+    rotX = Matrix44.from_x_rotation(0)
+    rotY = Matrix44.from_y_rotation(time.clock()*1.5)
+    rotZ = Matrix44.from_z_rotation(180 * np.pi / 180) # rotate 180 degrees. Convert degrees to radians
+    trans = Matrix44.from_translation( [ np.sin(time.clock())/4, np.sin(time.clock())/4, -1.3 ] ) # bounce diagonally from corner to corner, move back by -1.3
+    scale = Matrix44.from_scale([.5,.5,.5]) # uniformly scale by 0.5
+    tMatrix = proj * trans * scale * rotX * rotY * rotZ
+    prog['transform'].write(tMatrix.astype('f4').tobytes())
     ctx.clear(.1, .1, .1)
     vao.render()
     
