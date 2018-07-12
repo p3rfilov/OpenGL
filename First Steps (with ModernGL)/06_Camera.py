@@ -1,5 +1,5 @@
 # control camera movement through keyboard input
-# use UP, DOWN, LEFT, RIGHT, PAGEUP & PAGEDOWN keys to move the camera
+# use W, S, A, D, SPACE & LCTRL keys to move the camera
 
 import moderngl
 from OpenGL.GL import *
@@ -11,6 +11,7 @@ from pyrr import Matrix44, Vector4, Vector3
 import pyrr
 import os
 import time
+from pyrr.euler import pitch
 
 width = 1280
 height = 720
@@ -95,7 +96,7 @@ vertices = np.array([
     -0.5,  0.5, -0.5,  0.0, 1.0,
     ])
 
-cubePositions = [np.random.uniform(-2,2,size=3) for i in range(1,30)] # scatter 30 boxes with a random coordinate between -2 and 2
+cubePositions = [np.random.uniform(-2.0,2.0,size=3) for i in range(1,30)] # scatter 30 boxes with a random coordinate between -2 and 2
 
 vbo = ctx.buffer(vertices.astype('f4').tobytes())
 vao = ctx.simple_vertex_array(prog, vbo, 'in_vert', 'in_UVs')
@@ -115,36 +116,51 @@ cameraSpeed = 0.3
 cameraPos = Vector3([1.0, 1.0, -10.0])
 cameraFront = Vector3([0.0, 0.0, -1.0])
 cameraUp = Vector3([0.0, 1.0, 0.0])
+yaw = 0.0
+pitch = 0.0
 
 @window.event
 def on_key_press(symbol, modifier):
     global cameraPos
-    if symbol == key.UP:
+    if symbol == key.W:
         cameraPos -= cameraSpeed * cameraFront
-    if symbol == key.DOWN:
+    if symbol == key.S:
         cameraPos += cameraSpeed * cameraFront
-    if symbol == key.LEFT:
+    if symbol == key.A:
         cameraPos += pyrr.vector.normalize(Vector3.cross(cameraFront, cameraUp)) * cameraSpeed
-    if symbol == key.RIGHT:
+    if symbol == key.D:
         cameraPos -= pyrr.vector.normalize(Vector3.cross(cameraFront, cameraUp)) * cameraSpeed
-    if symbol == key.PAGEUP:
+    if symbol == key.SPACE:
         cameraPos += cameraUp * cameraSpeed
-    if symbol == key.PAGEDOWN:
+    if symbol == key.LCTRL:
         cameraPos -= cameraUp * cameraSpeed
+        
+# @window.event
+# def on_mouse_motion(x, y, dx, dy):
+#     global cameraFront, yaw, pitch
+#     yaw += dx
+#     pitch -= dy
+#     if pitch > 89.0: pitch = 89.0
+#     if pitch < -89.0: pitch = -89.0
+#     front = Vector3()
+#     front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
+#     front.y = np.sin(np.radians(pitch))
+#     front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
+#     cameraFront = pyrr.vector.normalize(front)
 
 def scatterCubes(vector, projectionMat):
     view = lookAt = Matrix44.look_at(cameraPos, cameraFront, cameraUp)
-    r = vector[0] * 10 # cube rotation offset based on vector's 1st component
-    rotX = Matrix44.from_x_rotation(r*time.clock()/10) # rotate cubes over time
+    r = vector[0] * 10.0 # cube rotation offset based on vector's 1st component
+    rotX = Matrix44.from_x_rotation(r*time.clock()/10.0) # rotate cubes over time
     rotY = Matrix44.from_y_rotation(r)
     rotZ = Matrix44.from_z_rotation(r)
-    trans = Matrix44.from_translation(vector) * Matrix44.from_translation([1,1,-5])
+    trans = Matrix44.from_translation(vector) * Matrix44.from_translation([1.0,1.0,-5.0])
     scale = Matrix44.from_scale([.5,.5,.5]) # uniformly scale by 0.5
     tMatrix = projectionMat * view * trans * scale * rotX * rotY * rotZ
     prog['transform'].write(tMatrix.astype('f4').tobytes())
 
 def update(dt):
-    proj = Matrix44.perspective_projection(45, width / height, 0.1, 1000.0)
+    proj = Matrix44.perspective_projection(45.0, width / height, 0.1, 1000.0)
     ctx.clear(.1, .1, .1) # also clears depth buffer
     for vec in cubePositions: # render multiple cubes
         scatterCubes(vec, proj)
