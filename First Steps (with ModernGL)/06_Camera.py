@@ -11,10 +11,9 @@ from pyrr import Matrix44, Vector4, Vector3
 import pyrr
 import os
 import time
-from pyrr.euler import pitch
 
-width = 1280
-height = 720
+width = 1920
+height = 1080
 window = pg.window.Window(width, height, 'Camera', resizable=False)
 # window.push_handlers(pg.window.event.WindowEventLogger())
 
@@ -135,18 +134,18 @@ def on_key_press(symbol, modifier):
     if symbol == key.LCTRL:
         cameraPos -= cameraUp * cameraSpeed
         
-# @window.event
-# def on_mouse_motion(x, y, dx, dy):
-#     global cameraFront, yaw, pitch
-#     yaw += dx
-#     pitch -= dy
-#     if pitch > 89.0: pitch = 89.0
-#     if pitch < -89.0: pitch = -89.0
-#     front = Vector3()
-#     front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
-#     front.y = np.sin(np.radians(pitch))
-#     front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
-#     cameraFront = pyrr.vector.normalize(front)
+@window.event
+def on_mouse_motion(x, y, dx, dy):
+    global cameraFront, yaw, pitch
+    yaw += dx
+    pitch -= dy
+    if pitch > 89.0: pitch = 89.0
+    if pitch < -89.0: pitch = -89.0
+    front = Vector3()
+    front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
+    front.y = np.sin(np.radians(pitch))
+    front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
+    cameraFront = pyrr.vector.normalize(front)
 
 def scatterCubes(vector, projectionMat):
     view = lookAt = Matrix44.look_at(cameraPos, cameraFront, cameraUp)
