@@ -12,9 +12,11 @@ import pyrr
 import os
 import time
 
-width = 1920
-height = 1080
+width = 1280
+height = 720
 window = pg.window.Window(width, height, 'Camera', resizable=False)
+window.set_mouse_visible(False)
+window.set_exclusive_mouse(False)
 # window.push_handlers(pg.window.event.WindowEventLogger())
 
 ctx = moderngl.create_context()
@@ -122,33 +124,33 @@ pitch = 0.0
 def on_key_press(symbol, modifier):
     global cameraPos
     if symbol == key.W:
-        cameraPos -= cameraSpeed * cameraFront
-    if symbol == key.S:
         cameraPos += cameraSpeed * cameraFront
+    if symbol == key.S:
+        cameraPos -= cameraSpeed * cameraFront
     if symbol == key.A:
-        cameraPos += pyrr.vector.normalize(Vector3.cross(cameraFront, cameraUp)) * cameraSpeed
+        cameraPos -= pyrr.vector.normalize(np.cross(cameraFront, cameraUp)) * cameraSpeed
     if symbol == key.D:
-        cameraPos -= pyrr.vector.normalize(Vector3.cross(cameraFront, cameraUp)) * cameraSpeed
+        cameraPos += pyrr.vector.normalize(np.cross(cameraFront, cameraUp)) * cameraSpeed
     if symbol == key.SPACE:
         cameraPos += cameraUp * cameraSpeed
     if symbol == key.LCTRL:
         cameraPos -= cameraUp * cameraSpeed
-        
-@window.event
-def on_mouse_motion(x, y, dx, dy):
-    global cameraFront, yaw, pitch
-    yaw += dx
-    pitch -= dy
-    if pitch > 89.0: pitch = 89.0
-    if pitch < -89.0: pitch = -89.0
-    front = Vector3()
-    front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
-    front.y = np.sin(np.radians(pitch))
-    front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
-    cameraFront = pyrr.vector.normalize(front)
+     
+# @window.event
+# def on_mouse_motion(x, y, dx, dy):
+#     global cameraFront, cameraUp, yaw, pitch
+#     yaw += dx
+#     pitch -= dy
+#     if pitch > 89.0: pitch = 89.0
+#     if pitch < -89.0: pitch = -89.0
+#     front = Vector3()
+#     front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
+#     front.y = np.sin(np.radians(pitch))
+#     front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
+#     cameraFront = pyrr.vector.normalize(front)*10
 
 def scatterCubes(vector, projectionMat):
-    view = lookAt = Matrix44.look_at(cameraPos, cameraFront, cameraUp)
+    view = Matrix44.look_at(cameraPos, cameraFront, cameraUp)
     r = vector[0] * 10.0 # cube rotation offset based on vector's 1st component
     rotX = Matrix44.from_x_rotation(r*time.clock()/10.0) # rotate cubes over time
     rotY = Matrix44.from_y_rotation(r)
