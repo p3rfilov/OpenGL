@@ -8,6 +8,7 @@ from pyglet.gl import *
 from pyglet.window import key, mouse
 import pyrr
 from pyrr import Matrix44, Vector3
+import time
 
 width = 1280
 height = 720
@@ -29,7 +30,8 @@ vs_box = '''
     void main()
     {
         fragPos = vec3(model * vec4(in_vert, 1.0));
-        fragNorm = in_norm;
+        vec3 normal = mat3(transpose(inverse(model))) * in_norm; // due to cube's rotation, we need to transform the normal
+        fragNorm = normal;
         gl_Position = projection * view * model * vec4(in_vert, 1.0);
     }
     '''
@@ -188,7 +190,7 @@ def buildTransMatrix(pos=[0,0,0], rot=[0,0,0], scale=[1,1,1]):
 def drawBox():
     vbo = ctx.buffer(vertices.astype('f4').tobytes())
     vao = ctx.simple_vertex_array(box_prog, vbo, 'in_vert', 'in_norm')
-    model = buildTransMatrix()
+    model = buildTransMatrix(rot=[0, time.clock() * 25, 0]) # slowly rotate the cube
     box_prog['projection'].write(proj.astype('f4').tobytes())
     box_prog['view'].write(view.astype('f4').tobytes())
     box_prog['model'].write(model.astype('f4').tobytes())
