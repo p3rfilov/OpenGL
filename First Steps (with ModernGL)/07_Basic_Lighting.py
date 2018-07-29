@@ -22,8 +22,10 @@ vs_box = '''
     uniform mat4 projection;
     uniform mat4 view;
     uniform mat4 model;
+    
     layout (location = 0) in vec3 in_vert;
     layout (location = 1) in vec3 in_norm;
+    
     out vec3 fragPos;
     out vec3 fragNorm;
     
@@ -39,31 +41,49 @@ vs_box = '''
 fs_box = '''
     # version 330 core
     
-    uniform vec3 objectColour;
-    uniform vec3 lightColour;
-    uniform vec3 lightPos;
+    struct Material
+    {
+        vec3 ambient;
+        vec3 diffuse;
+        vec3 specular;
+        float shininess;
+    };
+    
+    struct Light
+    {
+        vec3 position;
+        
+        vec3 ambient;
+        vec3 diffuse;
+        vec3 specular;
+    };
+    
+    uniform Material material;
+    uniform Light light;
     uniform vec3 viewPos;
+    
     in vec3 fragPos;
     in vec3 fragNorm;
     out vec4 fragColour;
     
     void main()
     {
-        float ambientStrength = 0.1;
-        vec3 ambient = ambientStrength * lightColour;
+        // ambient
+        vec3 ambient = light.ambient * material.ambient;
         
+        // diffuse
         vec3 norm = normalize(fragNorm);
-        vec3 lightDir = normalize(lightPos - fragPos);
+        vec3 lightDir = normalize(light.position - fragPos);
         float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = diff * lightColour;
+        vec3 diffuse = light.diffuse * (diff * material.diffuse);
         
-        float specularStrength = 0.5;
+        // specular
         vec3 viewDir = normalize(viewPos - fragPos);
         vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-        vec3 specular = specularStrength * spec * lightColour;
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+        vec3 specular = light.specular * (spec * material.specular);
         
-        vec3 result = (ambient + diffuse + specular) * objectColour;
+        vec3 result = ambient + diffuse + specular;
         fragColour = vec4(result, 1.0);
     }
     '''
@@ -98,48 +118,48 @@ box_prog = ctx.program(vertex_shader=vs_box, fragment_shader=fs_box)
 light_prog = ctx.program(vertex_shader=vs_light, fragment_shader=fs_light)
 
 vertices = np.array([
-    # cube (x, y, z, Nx, Ny, Nz)
-    -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,
-     0.5, -0.5, -0.5,  0.0,  0.0, -1.0, 
-     0.5,  0.5, -0.5,  0.0,  0.0, -1.0, 
-     0.5,  0.5, -0.5,  0.0,  0.0, -1.0, 
-    -0.5,  0.5, -0.5,  0.0,  0.0, -1.0, 
-    -0.5, -0.5, -0.5,  0.0,  0.0, -1.0, 
+    # positions        # normals         # texture coords
+    -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 0.0,
+     0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 0.0,
+     0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 1.0,
+     0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 1.0,
+    -0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 1.0,
+    -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 0.0,
 
-    -0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
-     0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
-     0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
-     0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
-    -0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
-    -0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
+    -0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 0.0,
+     0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 0.0,
+     0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 1.0,
+     0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 1.0,
+    -0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 1.0,
+    -0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 0.0,
 
-    -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,
-    -0.5,  0.5, -0.5, -1.0,  0.0,  0.0,
-    -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,
-    -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,
-    -0.5, -0.5,  0.5, -1.0,  0.0,  0.0,
-    -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,
+    -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0, 0.0,
+    -0.5,  0.5, -0.5, -1.0,  0.0,  0.0,  1.0, 1.0,
+    -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0, 1.0,
+    -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0, 1.0,
+    -0.5, -0.5,  0.5, -1.0,  0.0,  0.0,  0.0, 0.0,
+    -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0, 0.0,
 
-     0.5,  0.5,  0.5,  1.0,  0.0,  0.0,
-     0.5,  0.5, -0.5,  1.0,  0.0,  0.0,
-     0.5, -0.5, -0.5,  1.0,  0.0,  0.0,
-     0.5, -0.5, -0.5,  1.0,  0.0,  0.0,
-     0.5, -0.5,  0.5,  1.0,  0.0,  0.0,
-     0.5,  0.5,  0.5,  1.0,  0.0,  0.0,
+     0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0, 0.0,
+     0.5,  0.5, -0.5,  1.0,  0.0,  0.0,  1.0, 1.0,
+     0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0, 1.0,
+     0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0, 1.0,
+     0.5, -0.5,  0.5,  1.0,  0.0,  0.0,  0.0, 0.0,
+     0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0, 0.0,
 
-    -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,
-     0.5, -0.5, -0.5,  0.0, -1.0,  0.0,
-     0.5, -0.5,  0.5,  0.0, -1.0,  0.0,
-     0.5, -0.5,  0.5,  0.0, -1.0,  0.0,
-    -0.5, -0.5,  0.5,  0.0, -1.0,  0.0,
-    -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,
+    -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0, 1.0,
+     0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  1.0, 1.0,
+     0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0, 0.0,
+     0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0, 0.0,
+    -0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  0.0, 0.0,
+    -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0, 1.0,
 
-    -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
-     0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
-     0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
-     0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
-    -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
-    -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
+    -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0,
+     0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  1.0, 1.0,
+     0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
+     0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
+    -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  0.0, 0.0,
+    -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0
     ])
 
 glEnable(GL_DEPTH_TEST)
@@ -152,7 +172,7 @@ view = Matrix44.look_at(cameraPos, cameraTarget, cameraUp)
 proj = Matrix44.perspective_projection(45.0, width / height, 0.1, 1000.0)
 
 # light parameters 
-lightPos = Vector3([1.0, 0.8,-1.8])
+lightPos = Vector3([-0.015, 0.8, 0.055])
 lightCol = Vector3([1.0, 1.0, 1.0])
 
 @window.event
@@ -190,25 +210,46 @@ def buildTransMatrix(pos=[0,0,0], rot=[0,0,0], scale=[1,1,1]):
 def drawBox():
     vbo = ctx.buffer(vertices.astype('f4').tobytes())
     vao = ctx.simple_vertex_array(box_prog, vbo, 'in_vert', 'in_norm')
-    model = buildTransMatrix(rot=[0, time.clock() * 25, 0]) # slowly rotate the cube
+    # skip UV texture coordinate data
+    # each position value is a 32-bit float (4 bytes)
+    # 8 data values per vertex
+    vao.bind(0, 'f', vbo, '4f', stride = 4*8)               # layout location 0 - in_vert
+    vao.bind(1, 'f', vbo, '4f', stride = 4*8, offset = 3*4) # layout location 1 - in_norm
+    model = buildTransMatrix(pos=[0, np.sin(time.clock())/4, 0], rot=[0, time.clock() * 25, 0]) # slowly rotate the cube and move it up and down
     box_prog['projection'].write(proj.astype('f4').tobytes())
     box_prog['view'].write(view.astype('f4').tobytes())
     box_prog['model'].write(model.astype('f4').tobytes())
-    objCol = Vector3([1.0, 0.5, 0.31])
-    box_prog['objectColour'].write(objCol.astype('f4').tobytes())
-    box_prog['lightColour'].write(lightCol.astype('f4').tobytes())
-    box_prog['lightPos'].write(lightPos.astype('f4').tobytes())
     box_prog['viewPos'].write(cameraPos.astype('f4').tobytes())
+    
+    # light properties
+    pos = lightPos
+    amb = Vector3([0.2, 0.2, 0.2])
+    diff = Vector3([0.7, 0.7, 0.7])
+    spec = lightCol
+    box_prog['light.position'].write(pos.astype('f4').tobytes())
+    box_prog['light.ambient'].write(amb.astype('f4').tobytes())
+    box_prog['light.diffuse'].write(diff.astype('f4').tobytes())
+    box_prog['light.specular'].write(spec.astype('f4').tobytes())
+    
+    # material properties
+    amb = Vector3([1.0, 0.5, 0.31])
+    diff = Vector3([1.0, 0.5, 0.31])
+    spec = Vector3([0.5, 0.5, 0.5])
+    shine = 32.0
+    box_prog['material.ambient'].write(amb.astype('f4').tobytes())
+    box_prog['material.diffuse'].write(diff.astype('f4').tobytes())
+    box_prog['material.specular'].write(spec.astype('f4').tobytes())
+    box_prog['material.shininess'].value = shine
+    
     vao.render()
     
 def drawLight():
     vbo = ctx.buffer(vertices.astype('f4').tobytes())
     vao = ctx.simple_vertex_array(light_prog, vbo, 'in_vert')
-    # skip normal vector data by providing a stride value
+     # skip normal vector data and texture coordinates
     # each position value is a 32-bit float (4 bytes)
-    # 6 data values per vertex
-    # 4 * 6 = 24
-    vao.bind(0, 'f', vbo, '4f', stride=24)
+    # 8 data values per vertex
+    vao.bind(0, 'f', vbo, '4f', stride = 4*8) # layout location 0 - in_vert
     model = buildTransMatrix(pos=lightPos, scale=[0.1, 0.1, 0.1])
     light_prog['projection'].write(proj.astype('f4').tobytes())
     light_prog['view'].write(view.astype('f4').tobytes())
