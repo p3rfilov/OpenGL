@@ -113,32 +113,55 @@ prog['myTexture2'].value = 1
 
 glEnable(GL_DEPTH_TEST)
 
-cameraSpeed = 0.3
+cameraSpeed = 0.1
+mouseSpeed = 0.3
 cameraPos = Vector3([1.0, 1.0, -10.0])
-cameraFront = Vector3([0.0, 0.0, -1.0])
+cameraTarget = Vector3([0.0, 0.0, -1.0])
 cameraUp = Vector3([0.0, 1.0, 0.0])
 yaw = 0.0
 pitch = 0.0
+movement = Vector3([0, 0, 0])
+rotation = (0, 0)
 
 @window.event
 def on_key_press(symbol, modifier):
-    global cameraPos
     if symbol == key.W:
-        cameraPos += cameraSpeed * cameraFront
+        movement[2] += 1
     if symbol == key.S:
-        cameraPos -= cameraSpeed * cameraFront
+        movement[2] -= 1
     if symbol == key.A:
-        cameraPos -= pyrr.vector.normalize(np.cross(cameraFront, cameraUp)) * cameraSpeed
+        movement[0] += 1
     if symbol == key.D:
-        cameraPos += pyrr.vector.normalize(np.cross(cameraFront, cameraUp)) * cameraSpeed
+        movement[0] -= 1
     if symbol == key.SPACE:
-        cameraPos += cameraUp * cameraSpeed
+        movement[1] += 1
     if symbol == key.LCTRL:
-        cameraPos -= cameraUp * cameraSpeed
+        movement[1] -= 1
+
+@window.event        
+def on_key_release(symbol, modifiers):
+    if symbol == key.W:
+        movement[2] -= 1
+    if symbol == key.S:
+        movement[2] += 1
+    if symbol == key.A:
+        movement[0] -= 1
+    if symbol == key.D:
+        movement[0] += 1
+    if symbol == key.SPACE:
+        movement[1] -= 1
+    if symbol == key.LCTRL:
+        movement[1] += 1
+     
+def updateCameraPosition():
+    global cameraPos
+    global cameraTarget
+    cameraPos += movement * cameraSpeed
+    cameraTarget += movement * cameraSpeed
      
 # @window.event
 # def on_mouse_motion(x, y, dx, dy):
-#     global cameraFront, cameraUp, yaw, pitch
+#     global cameraTarget, yaw, pitch
 #     yaw += dx
 #     pitch -= dy
 #     if pitch > 89.0: pitch = 89.0
@@ -147,10 +170,10 @@ def on_key_press(symbol, modifier):
 #     front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
 #     front.y = np.sin(np.radians(pitch))
 #     front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
-#     cameraFront = pyrr.vector.normalize(front)*10
+#     cameraTarget = pyrr.vector.normalize(front)
 
 def scatterCubes(vector, projectionMat):
-    view = Matrix44.look_at(cameraPos, cameraFront, cameraUp)
+    view = Matrix44.look_at(cameraPos, cameraTarget, cameraUp)
     r = vector[0] * 10.0 # cube rotation offset based on vector's 1st component
     rotX = Matrix44.from_x_rotation(r*time.clock()/10.0) # rotate cubes over time
     rotY = Matrix44.from_y_rotation(r)
@@ -161,6 +184,7 @@ def scatterCubes(vector, projectionMat):
     prog['transform'].write(tMatrix.astype('f4').tobytes())
 
 def update(dt):
+    updateCameraPosition()
     proj = Matrix44.perspective_projection(45.0, width / height, 0.1, 1000.0)
     ctx.clear(.1, .1, .1) # also clears depth buffer
     for vec in cubePositions: # render multiple cubes
