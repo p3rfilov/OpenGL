@@ -7,10 +7,20 @@ import pyglet as pg
 from pyglet.window import key
 import numpy as np
 from PIL import Image
-from pyrr import Matrix44, Vector4, Vector3
+from pyrr import Matrix33, Matrix44, Vector4, Vector3
 import pyrr
 import os
 import time
+
+cameraSpeed = 0.1
+mouseSpeed = 0.3
+cameraPos = Vector3([0.0, 0.0, 0.0])
+cameraTarget = Vector3([1.0, 0.0, -1.0])
+cameraUp = Vector3([0.0, 1.0, 0.0])
+worldUp = Vector3([0.0, 1.0, 0.0])
+yaw = 0.0
+pitch = 0.0
+pressedKeys = []
 
 width = 1280
 height = 720
@@ -113,51 +123,39 @@ prog['myTexture2'].value = 1
 
 glEnable(GL_DEPTH_TEST)
 
-cameraSpeed = 0.1
-mouseSpeed = 0.3
-cameraPos = Vector3([1.0, 1.0, -10.0])
-cameraTarget = Vector3([0.0, 0.0, -1.0])
-cameraUp = Vector3([0.0, 1.0, 0.0])
-yaw = 0.0
-pitch = 0.0
-movement = Vector3([0, 0, 0])
-rotation = (0, 0)
-
 @window.event
 def on_key_press(symbol, modifier):
-    if symbol == key.W:
-        movement[2] += 1
-    if symbol == key.S:
-        movement[2] -= 1
-    if symbol == key.A:
-        movement[0] += 1
-    if symbol == key.D:
-        movement[0] -= 1
-    if symbol == key.SPACE:
-        movement[1] += 1
-    if symbol == key.LCTRL:
-        movement[1] -= 1
+    if symbol not in pressedKeys:
+        pressedKeys.append(symbol)
 
 @window.event        
 def on_key_release(symbol, modifiers):
-    if symbol == key.W:
-        movement[2] -= 1
-    if symbol == key.S:
-        movement[2] += 1
-    if symbol == key.A:
-        movement[0] -= 1
-    if symbol == key.D:
-        movement[0] += 1
-    if symbol == key.SPACE:
-        movement[1] -= 1
-    if symbol == key.LCTRL:
-        movement[1] += 1
+    if symbol in pressedKeys:
+        pressedKeys.remove(symbol)
      
 def updateCameraPosition():
     global cameraPos
     global cameraTarget
-    cameraPos += movement * cameraSpeed
-    cameraTarget += movement * cameraSpeed
+    frontVec = pyrr.vector.normalize(cameraTarget - cameraPos)
+    sideVec = pyrr.vector.normalize(np.cross(frontVec, worldUp))
+    if key.W in pressedKeys:
+        cameraPos += frontVec * cameraSpeed
+        cameraTarget += frontVec * cameraSpeed
+    if key.S in pressedKeys:
+        cameraPos -= frontVec * cameraSpeed
+        cameraTarget -= frontVec * cameraSpeed
+    if key.A in pressedKeys:
+        cameraPos -= sideVec * cameraSpeed
+        cameraTarget -= sideVec * cameraSpeed
+    if key.D in pressedKeys:
+        cameraPos += sideVec * cameraSpeed
+        cameraTarget += sideVec * cameraSpeed
+    if key.SPACE in pressedKeys:
+        cameraPos += worldUp * cameraSpeed
+        cameraTarget += worldUp * cameraSpeed
+    if key.LCTRL in pressedKeys:
+        cameraPos -= worldUp * cameraSpeed
+        cameraTarget -= worldUp * cameraSpeed
      
 # @window.event
 # def on_mouse_motion(x, y, dx, dy):
