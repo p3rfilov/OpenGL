@@ -1,5 +1,6 @@
 # control camera movement through keyboard input
 # use W, S, A, D, SPACE & LCTRL keys to move the camera
+# check module Viewport.py for more details
 
 import moderngl
 from OpenGL.GL import *
@@ -11,23 +12,9 @@ from pyrr import Matrix33, Matrix44, Vector4, Vector3
 import pyrr
 import os
 import time
+from Viewport import Viewport
 
-cameraSpeed = 0.1
-mouseSpeed = 0.3
-cameraPos = Vector3([0.0, 0.0, 0.0])
-cameraTarget = Vector3([1.0, 0.0, -1.0])
-cameraUp = Vector3([0.0, 1.0, 0.0])
-worldUp = Vector3([0.0, 1.0, 0.0])
-yaw = 0.0
-pitch = 0.0
-pressedKeys = []
-
-width = 1280
-height = 720
-window = pg.window.Window(width, height, 'Camera', resizable=False)
-window.set_mouse_visible(False)
-window.set_exclusive_mouse(False)
-# window.push_handlers(pg.window.event.WindowEventLogger())
+window = Viewport()
 
 ctx = moderngl.create_context()
 prog = ctx.program(
@@ -123,55 +110,8 @@ prog['myTexture2'].value = 1
 
 glEnable(GL_DEPTH_TEST)
 
-@window.event
-def on_key_press(symbol, modifier):
-    if symbol not in pressedKeys:
-        pressedKeys.append(symbol)
-
-@window.event        
-def on_key_release(symbol, modifiers):
-    if symbol in pressedKeys:
-        pressedKeys.remove(symbol)
-     
-def updateCameraPosition():
-    global cameraPos
-    global cameraTarget
-    frontVec = pyrr.vector.normalize(cameraTarget - cameraPos)
-    sideVec = pyrr.vector.normalize(np.cross(frontVec, worldUp))
-    if key.W in pressedKeys:
-        cameraPos += frontVec * cameraSpeed
-        cameraTarget += frontVec * cameraSpeed
-    if key.S in pressedKeys:
-        cameraPos -= frontVec * cameraSpeed
-        cameraTarget -= frontVec * cameraSpeed
-    if key.A in pressedKeys:
-        cameraPos -= sideVec * cameraSpeed
-        cameraTarget -= sideVec * cameraSpeed
-    if key.D in pressedKeys:
-        cameraPos += sideVec * cameraSpeed
-        cameraTarget += sideVec * cameraSpeed
-    if key.SPACE in pressedKeys:
-        cameraPos += worldUp * cameraSpeed
-        cameraTarget += worldUp * cameraSpeed
-    if key.LCTRL in pressedKeys:
-        cameraPos -= worldUp * cameraSpeed
-        cameraTarget -= worldUp * cameraSpeed
-     
-# @window.event
-# def on_mouse_motion(x, y, dx, dy):
-#     global cameraTarget, yaw, pitch
-#     yaw += dx
-#     pitch -= dy
-#     if pitch > 89.0: pitch = 89.0
-#     if pitch < -89.0: pitch = -89.0
-#     front = Vector3()
-#     front.x = np.cos(np.radians(yaw)) * np.cos(np.radians(pitch))
-#     front.y = np.sin(np.radians(pitch))
-#     front.z = np.sin(np.radians(yaw)) * np.cos(np.radians(pitch))
-#     cameraTarget = pyrr.vector.normalize(front)
-
 def scatterCubes(vector, projectionMat):
-    view = Matrix44.look_at(cameraPos, cameraTarget, cameraUp)
+    view = window.view
     r = vector[0] * 10.0 # cube rotation offset based on vector's 1st component
     rotX = Matrix44.from_x_rotation(r*time.clock()/10.0) # rotate cubes over time
     rotY = Matrix44.from_y_rotation(r)
@@ -182,11 +122,10 @@ def scatterCubes(vector, projectionMat):
     prog['transform'].write(tMatrix.astype('f4').tobytes())
 
 def update(dt):
-    updateCameraPosition()
-    proj = Matrix44.perspective_projection(45.0, width / height, 0.1, 1000.0)
+    window.update()
     ctx.clear(.1, .1, .1) # also clears depth buffer
     for vec in cubePositions: # render multiple cubes
-        scatterCubes(vec, proj)
+        scatterCubes(vec, window.projection)
         vao.render()
     
 pg.clock.schedule_interval(update, 1.0 / 60.0)
