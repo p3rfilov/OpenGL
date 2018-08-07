@@ -1,6 +1,6 @@
 # lighting textured primitives
 # apply diffuse and specular maps
-# use W, S, A, D, SPACE & LCTRL keys or the mouse (click and drag) to move the light
+# move the mouse while holding LEFT or RIGHT button to control the light
 
 import os
 import moderngl
@@ -15,7 +15,7 @@ import time
 
 width = 1280
 height = 720
-window = pg.window.Window(width, height, 'Lighting Maps', resizable=False)
+window = pg.window.Window(width, height, 'Light Casters', resizable=False)
 
 ctx = moderngl.create_context()
 
@@ -74,20 +74,30 @@ fs_box = '''
     
     void main()
     {
+        // light attenuation
+        float constant = 1.0;
+        float linear = 0.35;
+        float quadratic = 0.44;
+        float distance = length(light.position - fragPos);
+        float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+        
         // ambient
         vec3 ambient = light.ambient * vec3(texture(material.diffuse, texCoords));
+        ambient *= attenuation;
         
         // diffuse
         vec3 norm = normalize(fragNorm);
         vec3 lightDir = normalize(light.position - fragPos);
         float diff = max(dot(norm, lightDir), 0.0);
         vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, texCoords));
+        diffuse *= attenuation;
         
         // specular
         vec3 viewDir = normalize(viewPos - fragPos);
         vec3 reflectDir = reflect(-lightDir, norm);
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
         vec3 specular = light.specular * spec * vec3(texture(material.specular, texCoords));
+        specular *= attenuation;
         
         vec3 result = ambient + diffuse + specular;
         fragColour = vec4(result, 1.0);
@@ -180,22 +190,6 @@ proj = Matrix44.perspective_projection(45.0, width / height, 0.1, 1000.0)
 # light parameters 
 lightPos = Vector3([-0.8, -0.4, -0.3])
 lightCol = Vector3([1.0, 1.0, 1.0])
-
-@window.event
-def on_key_press(symbol, modifier):
-    global lightPos
-    if symbol == key.W:
-        lightPos.z += cameraSpeed
-    if symbol == key.S:
-        lightPos.z -= cameraSpeed
-    if symbol == key.A:
-        lightPos.x += cameraSpeed
-    if symbol == key.D:
-        lightPos.x -= cameraSpeed
-    if symbol == key.SPACE:
-        lightPos.y += cameraSpeed
-    if symbol == key.LCTRL:
-        lightPos.y -= cameraSpeed
         
 @window.event
 def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
@@ -203,7 +197,8 @@ def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
     if buttons & mouse.LEFT:
         lightPos.z += dy / 200
         lightPos.x -= dx / 200
-#     print (lightPos)
+    if buttons & mouse.RIGHT:
+        lightPos.y += dy / 200
 
 def buildTransMatrix(pos=[0,0,0], rot=[0,0,0], scale=[1,1,1]):
     trans = Matrix44.from_translation(pos)
