@@ -12,7 +12,7 @@ from pyrr import Matrix33, Matrix44, Vector4, Vector3
 import pyrr
 import os
 import time
-from Viewport import Viewport
+from Classes.Viewport import Viewport
 
 window = Viewport()
 
@@ -111,7 +111,7 @@ prog['myTexture2'].value = 1
 glEnable(GL_DEPTH_TEST)
 
 def scatterCubes(vector, projectionMat):
-    view = window.view
+    view = window.getViewMatrix()
     r = vector[0] * 10.0 # cube rotation offset based on vector's 1st component
     rotX = Matrix44.from_x_rotation(r*time.clock()/10.0) # rotate cubes over time
     rotY = Matrix44.from_y_rotation(r)
@@ -125,7 +125,7 @@ def update(dt):
     window.update()
     ctx.clear(.1, .1, .1) # also clears depth buffer
     for vec in cubePositions: # render multiple cubes
-        scatterCubes(vec, window.projection)
+        scatterCubes(vec, window.getProjectionMatrix())
         vao.render()
     
 pg.clock.schedule_interval(update, 1.0 / 60.0)

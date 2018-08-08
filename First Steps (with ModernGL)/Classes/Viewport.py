@@ -30,6 +30,12 @@ class Viewport(Window):
         self.projection = Matrix44.perspective_projection(45.0, width / height, 0.1, 1000.0)
         self.view = Matrix44.look_at(self.cameraPos, self.cameraTarget, self.cameraUp)
     
+    def getProjectionMatrix(self):
+        return self.projection
+    
+    def getViewMatrix(self):
+        return self.view
+    
     def on_key_press(self, symbol, modifier):
         '''Add the pressed key to the list to be later used in updateCameraPosition'''
         if symbol not in self.pressedKeys:
