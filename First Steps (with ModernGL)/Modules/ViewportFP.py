@@ -4,9 +4,10 @@ import numpy as np
 import pyrr
 from pyrr import Matrix44, Vector3
 
-class Viewport(Window):
+class ViewportFP(Window):
     '''
     Convenience class for creating a OpenGL window.
+    Creates a First-person-type camera.
     Generates a perspective and look_at (view) matrices.
     Includes camera controls (W, S, A, D, SPACE, LCTRL & mouse)
     '''
@@ -35,6 +36,9 @@ class Viewport(Window):
     
     def getViewMatrix(self):
         return self.view
+    
+    def getCameraPosition(self):
+        return self.cameraPos
     
     def on_key_press(self, symbol, modifier):
         '''Add the pressed key to the list to be later used in updateCameraPosition'''
@@ -97,5 +101,5 @@ class Viewport(Window):
 if __name__ == '__main__':
     from pyglet import app
     
-    window = Viewport()
+    window = ViewportFP()
     app.run()

@@ -12,9 +12,9 @@ from pyrr import Matrix33, Matrix44, Vector4, Vector3
 import pyrr
 import os
 import time
-from Classes.Viewport import Viewport
+from Modules.ViewportFP import ViewportFP
 
-window = Viewport()
+window = ViewportFP() # First-Person-type viewport
 
 ctx = moderngl.create_context()
 prog = ctx.program(
@@ -102,6 +102,8 @@ img1 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Brick_{size
 img2 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Bulb.jpg'))
 tex1 = ctx.texture(img1.size, 3, img1.tobytes()) # 3 for RGB
 tex2 = ctx.texture(img2.size, 3, img2.tobytes())
+tex1.build_mipmaps()
+tex2.build_mipmaps()
 tex1.use(0) # bind texture to 0 texture unit
 tex2.use(1) # bind texture to 1 texture unit
 # assign texture unit indexes
