@@ -209,6 +209,14 @@ def buildTransMatrix(pos=[0,0,0], rot=[0,0,0], scale=[1,1,1]):
     tMatrix = trans * scale * rotX * rotY * rotZ
     return tMatrix
 
+def loadTextures():
+    img1 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Brick_{size}x{size}.jpg'.format(size=512))) # texture sizes: 8,16,32,64,128,256,512,1024,2048,4096
+    tex1 = ctx.texture(img1.size, 3, img1.tobytes()) # 3 for RGB
+    tex1.use(0) # bind texture to 0 texture unit
+    img2 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Brick_Spec.jpg'))
+    tex2 = ctx.texture(img2.size, 3, img2.tobytes()) # 3 for RGB
+    tex2.use(1) # bind texture to 1 texture unit
+
 def drawBox():
     vbo = ctx.buffer(vertices.astype('f4').tobytes())
     vao = ctx.simple_vertex_array(box_prog, vbo, 'in_vert', 'in_norm', 'in_UVs')
@@ -230,12 +238,6 @@ def drawBox():
     box_prog['light.specular'].write(spec.astype('f4').tobytes())
     
     # material properties
-    img1 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Brick_{size}x{size}.jpg'.format(size=512))) # texture sizes: 8,16,32,64,128,256,512,1024,2048,4096
-    tex1 = ctx.texture(img1.size, 3, img1.tobytes()) # 3 for RGB
-    tex1.use(0) # bind texture to 0 texture unit
-    img2 = Image.open(os.path.join(os.path.dirname(__file__), 'images', 'Brick_Spec.jpg'))
-    tex2 = ctx.texture(img2.size, 3, img2.tobytes()) # 3 for RGB
-    tex2.use(1) # bind texture to 1 texture unit
     diff = Vector3([1.0, 0.5, 0.31])
     spec = Vector3([0.5, 0.5, 0.5])
     shine = 32.0
@@ -265,5 +267,6 @@ def update(dt):
     drawBox()
     drawLight()
 
+loadTextures()
 pg.clock.schedule_interval(update, 1.0 / 60.0)
 pg.app.run()
